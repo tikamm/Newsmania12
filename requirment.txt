@@ -1,0 +1,18 @@
+# Requirements
+
+**Browser:**  
+- Latest version of Chrome, Firefox, or Edge.
+
+**Internet:**  
+- Required for fetching news and weather data.
+
+**API Key:**  
+- GNews API key needed for live news fetching.
+
+**Libraries:**  
+- Chart.js (optional, for analytics)
+
+**Project Files:**  
+- `index.html` → Main structure  
+- `style.css` → Styling  
+- `script.js` → JavaScript logic

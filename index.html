@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>News Mania – Tikam</title>
+
+  <!-- Chart.js for analytics charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* -------------------
+       Base & Theme
+       ------------------- */
+    :root{
+      --bg:#0f1720;           /* main background */
+      --panel:#111827;        /* card background */
+      --muted:#9aa4b2;        /* secondary text */
+      --accent:#06b6d4;       /* accent (teal-blue) */
+      --accent-2:#f59e0b;     /* secondary accent (amber) */
+      --glass: rgba(255,255,255,0.03);
+      --card-shadow: 0 8px 24px rgba(2,6,23,0.6);
+      --soft-radius: 12px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      background:linear-gradient(180deg,#071226 0%, #0f1720 100%);
+      color:#e6eef6;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      line-height:1.45;
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:18px 24px;
+      background:linear-gradient(90deg, rgba(6,182,212,0.08), rgba(245,158,11,0.06));
+      border-bottom:1px solid rgba(255,255,255,0.03);
+      backdrop-filter: blur(6px);
+    }
+    .brand {
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .logo {
+      width:56px;
+      height:56px;
+      border-radius:10px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg,var(--accent),#7c3aed);
+      color:#061423;
+      font-weight:700;
+      font-size:20px;
+      box-shadow:0 6px 18px rgba(6,182,212,0.08);
+    }
+    .title{
+      font-weight:700;
+      font-size:20px;
+      letter-spacing:0.2px;
+    }
+    .meta {
+      font-size:13px;
+      color:var(--muted);
+    }
+    .header-right {
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .clock, .weather { font-size:13px; color:var(--muted); }
+
+    /* -------------------
+       Controls
+       ------------------- */
+    .controls {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      padding:18px 24px;
+    }
+    .category-btns {
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .category-btns button {
+      border: none;
+      background:var(--glass);
+      color:var(--muted);
+      padding:10px 14px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:600;
+      transition:all .18s ease;
+      box-shadow:0 4px 10px rgba(2,6,23,0.5);
+    }
+    .category-btns button:hover{ transform:translateY(-3px); color:#fff; background:linear-gradient(90deg,var(--accent),#7c3aed); }
+    .show-all { text-align:center; margin:8px 0 0 0; }
+    .show-all button { padding:10px 18px; border-radius:10px; border:none; background:linear-gradient(90deg,var(--accent),#7c3aed); color:#061423; cursor:pointer; font-weight:700; }
+
+    /* -------------------
+       Layout
+       ------------------- */
+    .content {
+      display:grid;
+      grid-template-columns: 1fr 380px;
+      gap:24px;
+      padding:20px;
+    }
+
+    /* Left: news area */
+    .container {
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+    .news-grid {
+      display:flex;
+      gap:18px;
+      flex-wrap:wrap;
+      align-items:flex-start;
+    }
+
+    .box {
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:var(--soft-radius);
+      width:calc(33.333% - 12px);
+      min-width:260px;
+      padding:12px;
+      box-shadow:var(--card-shadow);
+      transition: transform .14s ease, box-shadow .14s ease;
+      border:1px solid rgba(255,255,255,0.02);
+    }
+    .box:hover{ transform:translateY(-6px); box-shadow: 0 18px 40px rgba(2,6,23,0.7); }
+    .box h2 { text-align:center; margin:6px 0 10px; font-size:16px; color:var(--accent-2); }
+    ul{ padding-left:18px; margin:8px 0 0; }
+    ul li{ margin-bottom:8px; font-size:14px; color: #dfe9f2; }
+    ul li a{ color:#9adbf2; text-decoration:none; transition:color .12s; }
+    ul li a:hover{ color:#fff; text-decoration:underline; }
+
+    /* Notes */
+    .notes {
+      margin-top:16px;
+      padding:14px;
+      border-radius:12px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+      border:1px solid rgba(255,255,255,0.02);
+    }
+    textarea { width:100%; min-height:90px; padding:12px; border-radius:8px; border:1px dashed rgba(255,255,255,0.03); background:transparent; color:inherit; resize:vertical; }
+    .notes button { margin-top:10px; background:var(--accent); color:#08202a; border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600; }
+
+    /* Right: sidebar (Analytics + misc) */
+    .sidebar {
+      position:sticky;
+      top:20px;
+      align-self:start;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      min-height:200px;
+    }
+    .card {
+      padding:14px;
+      border-radius:12px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+      border:1px solid rgba(255,255,255,0.02);
+      box-shadow:var(--card-shadow);
+    }
+    .card h3 { margin:0 0 10px 0; color:var(--accent); }
+    .analytics-output { font-size:13px; color:var(--muted); white-space:pre-wrap; max-height:240px; overflow:auto; }
+
+    /* Charts */
+    .chart-canvas { width:100% !important; max-height:250px; }
+
+    /* Responsive */
+    @media (max-width:1100px){
+      .content { grid-template-columns: 1fr; padding:16px; }
+      .box { width:48%; }
+      .sidebar { position:static; }
+    }
+    @media (max-width:680px){
+      .news-grid { gap:12px; }
+      .box { width:100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="logo">NM</div>
+      <div>
+        <div class="title">News Mania</div>
+        <div class="meta">by Tikam – ttikam31@gmail.com</div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="clock" id="clock">Loading time...</div>
+      <div class="weather" id="weather">🌤️ Weather: Loading...</div>
+      <div>
+        <button onclick="toggleDark()" style="padding:8px 12px;border-radius:8px;border:none;cursor:pointer;background:linear-gradient(90deg,var(--accent),#7c3aed);color:#061423;font-weight:700">Toggle Theme</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="category-btns">
+      <button class="world" onclick="loadCategory('world')">World</button>
+      <button class="tech" onclick="loadCategory('technology')">Tech</button>
+      <button class="business" onclick="loadCategory('business')">Business</button>
+      <button onclick="loadCategory('sports')">Sports</button>
+      <button onclick="loadCategory('entertainment')">Entertainment</button>
+    </div>
+
+    <div style="display:flex; gap:8px; align-items:center;">
+      <div class="meta">Max results per category: 10</div>
+      <div style="width:12px"></div>
+      <div class="show-all"><button onclick="showAllNews()">Show All</button></div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="content">
+    <!-- LEFT: News -->
+    <div class="container">
+      <div id="news-container" class="news-grid">
+        <!-- boxes inserted here -->
+      </div>
+
+      <!-- Notes (keep existing feature) -->
+      <div class="notes card">
+        <h3>📝 Notes</h3>
+        <textarea id="note" placeholder="Write notes here..."></textarea><br>
+        <button onclick="downloadNote()">Download Notes</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: Sidebar (Analytics + Quick Stats) -->
+    <aside class="sidebar">
+      <div class="card">
+        <h3>📊 Quick Analytics</h3>
+        <div class="analytics-output" id="analytics-output">No analytics collected yet. Click some headlines to build data.</div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button onclick="showAnalytics()" style="flex:1; background:var(--accent); color:#061423; border:0; padding:8px 10px; border-radius:8px; cursor:pointer; font-weight:700">Show</button>
+          <button onclick="clearAnalytics()" style="flex:1; background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--muted); padding:8px 10px; border-radius:8px; cursor:pointer">Clear</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📈 Charts</h3>
+        <canvas id="wordChart" class="chart-canvas"></canvas>
+        <canvas id="sourceChart" class="chart-canvas" style="margin-top:12px;"></canvas>
+      </div>
+
+      <div class="card">
+        <h3>ℹ Info</h3>
+        <div style="font-size:13px; color:var(--muted)">
+          - Data tracked in your browser (localStorage).<br>
+          - Click headlines to register interactions.<br>
+          - Download notes & clear analytics as needed.
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ORIGINAL + NEW SCRIPT (all features preserved + analytics) -->
+  <script>
+    /* -------------------------
+       Configuration & keys
+       ------------------------- */
+    // NOTE: This is the key your earlier JS used. If you want to use another key, replace it.
+    const apiKey = "c5014577efb7b3009f3ea05e08d6bd97";
+    const baseURL = `https://gnews.io/api/v4/top-headlines?token=${apiKey}&lang=en&max=10&topic=`;
+    const newsContainer = document.getElementById("news-container");
+
+    // Colors kept from earlier version but restyled into cards
+    const categoryColors = {
+      world: '#b0f2b6',
+      technology: '#ffe8a1',
+      business: '#e0e0e0',
+      sports: '#ffd6e0',
+      entertainment: '#dbeafe'
+    };
+
+    /* -------------------------
+       UI Helpers
+       ------------------------- */
+    function toggleDark() {
+      // original toggle effect kept (but now theme is dark by default); toggles light/dark feel
+      document.body.classList.toggle("light-mode");
+      if (document.body.classList.contains('light-mode')) {
+        document.documentElement.style.setProperty('--bg','#f5f7fb');
+        document.documentElement.style.setProperty('--panel','#ffffff');
+        document.documentElement.style.setProperty('--muted','#546379');
+        document.documentElement.style.setProperty('--accent','#0ea5b1');
+        document.documentElement.style.setProperty('--accent-2','#b45309');
+        document.documentElement.style.setProperty('--card-shadow','0 6px 20px rgba(2,6,23,0.06)');
+      } else {
+        // restore defaults
+        document.documentElement.style.setProperty('--bg','#0f1720');
+        document.documentElement.style.setProperty('--panel','#111827');
+        document.documentElement.style.setProperty('--muted','#9aa4b2');
+        document.documentElement.style.setProperty('--accent','#06b6d4');
+        document.documentElement.style.setProperty('--accent-2','#f59e0b');
+        document.documentElement.style.setProperty('--card-shadow','0 8px 24px rgba(2,6,23,0.6)');
+      }
+    }
+
+    function updateClock() {
+      document.getElementById("clock").textContent = new Date().toLocaleString();
+    }
+
+    // Simple weather fetch kept (original used wttr.in)
+    function fetchWeather() {
+      fetch("https://wttr.in/?format=%C+%t")
+        .then(res => res.text())
+        .then(txt => {
+          document.getElementById("weather").textContent = "🌤️ Weather: " + txt;
+        })
+        .catch(() => {
+          document.getElementById("weather").textContent = "🌤️ Weather: Unavailable";
+        });
+    }
+
+    // Notes download (keeps original behavior)
+    function downloadNote() {
+      const text = document.getElementById("note").value;
+      const blob = new Blob([text], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "notes.txt";
+      a.click();
+    }
+
+    // Initialize small things
+    setInterval(updateClock, 1000);
+    updateClock();
+    fetchWeather();
+
+    /* -------------------------
+       Analytics tracking (localStorage)
+       key: news_analytics
+       Structure:
+       {
+         topic1: { "Title A": count, "Title B": count },
+         topic2: { ... }
+       }
+       ------------------------- */
+    const ANALYTICS_KEY = 'news_analytics';
+
+    function trackClick(topic, title, sourceName) {
+      try {
+        const analytics = JSON.parse(localStorage.getItem(ANALYTICS_KEY)) || { meta: { clicks: 0 } };
+        // store per-topic -> title
+        if (!analytics[topic]) analytics[topic] = {};
+        analytics[topic][title] = (analytics[topic][title] || 0) + 1;
+        analytics.meta = analytics.meta || {};
+        analytics.meta.clicks = (analytics.meta.clicks || 0) + 1;
+
+        // also store sources summary for quick stats
+        analytics.sources = analytics.sources || {};
+        if (sourceName) analytics.sources[sourceName] = (analytics.sources[sourceName] || 0) + 1;
+
+        localStorage.setItem(ANALYTICS_KEY, JSON.stringify(analytics));
+      } catch (err) {
+        console.error("Analytics error:", err);
+      }
+    }
+
+    function clearAnalytics() {
+      localStorage.removeItem(ANALYTICS_KEY);
+      document.getElementById("analytics-output").textContent = "Analytics cleared.";
+      // destroy charts if present
+      if (window._wordChart) { window._wordChart.destroy(); window._wordChart = null; }
+      if (window._sourceChart) { window._sourceChart.destroy(); window._sourceChart = null; }
+    }
+
+    function showAnalytics() {
+      const out = document.getElementById("analytics-output");
+      const analytics = JSON.parse(localStorage.getItem(ANALYTICS_KEY)) || {};
+      if (Object.keys(analytics).length === 0) {
+        out.textContent = "No analytics data yet. Click some news links to generate analytics.";
+        return;
+      }
+      // Build readable output
+      let text = `Total Clicks: ${analytics.meta?.clicks || 0}\n\n`;
+      if (analytics.sources) {
+        text += "By Source:\n";
+        Object.entries(analytics.sources).sort((a,b)=>b[1]-a[1]).forEach(([s,c])=>{
+          text += ` - ${s}: ${c}\n`;
+        });
+        text += `\n`;
+      }
+      for (const topic in analytics) {
+        if (topic === 'meta' || topic === 'sources') continue;
+        text += `${topic.toUpperCase()}:\n`;
+        const arr = Object.entries(analytics[topic]).sort((a,b)=>b[1]-a[1]);
+        arr.forEach(([title,count]) => {
+          text += `  • ${title} — ${count} clicks\n`;
+        });
+        text += `\n`;
+      }
+      out.textContent = text;
+
+      // Rebuild charts too from local analytics + recent articles data (if present)
+      // We'll attempt to regenerate based on stored sources + word freq from last fetched headlines
+      try {
+        // sources chart
+        const sourceCounts = analytics.sources || {};
+        const srcLabels = Object.keys(sourceCounts);
+        const srcData = srcLabels.map(l=>sourceCounts[l]);
+
+        if (window._sourceChart) window._sourceChart.destroy();
+        const srcCtx = document.getElementById('sourceChart').getContext('2d');
+        window._sourceChart = new Chart(srcCtx, {
+          type:'doughnut',
+          data: {
+            labels: srcLabels,
+            datasets:[{
+              data: srcData,
+              backgroundColor: ['#ff9800','#4caf50','#2196f3','#e91e63','#9c27b0','#00bcd4','#8b5cf6','#f97316']
+            }]
+          },
+          options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
+        });
+      } catch(e) { console.warn('Source chart error', e); }
+    }
+
+    /* -------------------------
+       News fetching & rendering (keep original behavior + enhancements)
+       ------------------------- */
+    async function fetchNews(topic) {
+      try {
+        const res = await fetch(baseURL + topic);
+        const data = await res.json();
+        return data.articles || [];
+      } catch (e) {
+        console.error("Fetch error:", e);
+        return [];
+      }
+    }
+
+    // Safe function to create link and attach tracker
+    function createTrackedLink(article, topic) {
+      const a = document.createElement('a');
+      a.href = article.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = article.title;
+      // Use capture of article.title and source.name
+      a.addEventListener('click', (ev) => {
+        try { trackClick(topic, article.title, article.source?.name || 'Unknown'); } catch(_) {}
+        // allow default (open link) to proceed
+      });
+      return a;
+    }
+
+    async function loadCategory(topic) {
+      newsContainer.innerHTML = '';
+      const articles = await fetchNews(topic);
+      const box = document.createElement('div');
+      box.className = 'box';
+      box.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005))';
+      box.innerHTML = `<h2>${topic.charAt(0).toUpperCase() + topic.slice(1)}</h2><ul></ul>`;
+      const ul = box.querySelector('ul');
+
+      if (!articles || articles.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'No articles found.';
+        ul.appendChild(li);
+      } else {
+        articles.forEach(article => {
+          const li = document.createElement('li');
+          const a = createTrackedLink(article, topic);
+          li.appendChild(a);
+          // optionally show source name lightly
+          const src = document.createElement('div');
+          src.style.fontSize = '12px';
+          src.style.color = 'var(--muted)';
+          src.style.marginTop = '4px';
+          src.textContent = article.source?.name || '';
+          li.appendChild(src);
+          ul.appendChild(li);
+        });
+      }
+      newsContainer.appendChild(box);
+    }
+
+    // show all topics (preserve original topics array; kept original categories)
+    async function showAllNews() {
+      newsContainer.innerHTML = '';
+      const topics = ['world', 'technology', 'business'];
+      for (const topic of topics) {
+        const articles = await fetchNews(topic);
+        const box = document.createElement('div');
+        box.className = 'box';
+        box.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005))';
+        box.innerHTML = `<h2>${topic.charAt(0).toUpperCase() + topic.slice(1)}</h2><ul></ul>`;
+        const ul = box.querySelector('ul');
+        if (!articles || articles.length === 0) {
+          const li = document.createElement('li');
+          li.textContent = 'No articles.';
+          ul.appendChild(li);
+        } else {
+          articles.forEach(article => {
+            const li = document.createElement('li');
+            const a = createTrackedLink(article, topic);
+            li.appendChild(a);
+            const src = document.createElement('div');
+            src.style.fontSize = '12px';
+            src.style.color = 'var(--muted)';
+            src.style.marginTop = '4px';
+            src.textContent = article.source?.name || '';
+            li.appendChild(src);
+            ul.appendChild(li);
+          });
+        }
+        newsContainer.appendChild(box);
+      }
+
+      // After loading, also generate immediate lightweight analytics: word frequency + source counts from fetched articles
+      // We'll gather titles across the boxes to build charts
+      try {
+        // get all article titles currently displayed
+        const titles = Array.from(document.querySelectorAll('#news-container ul li a')).map(a => a.textContent);
+        const allText = titles.join(' ');
+        const words = allText.toLowerCase().match(/\b[a-z]{4,}\b/g) || [];
+        const freq = {};
+        words.forEach(w => freq[w] = (freq[w] || 0) + 1);
+        const topWords = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+        // destroy old chart if present
+        if (window._wordChart) { window._wordChart.destroy(); window._wordChart = null; }
+        // word chart
+        const ctxW = document.getElementById('wordChart').getContext('2d');
+        window._wordChart = new Chart(ctxW, {
+          type: 'bar',
+          data: {
+            labels: topWords.map(t=>t[0]),
+            datasets: [{ label: 'Top words in headlines', data: topWords.map(t=>t[1]), backgroundColor: '#06b6d4' }]
+          },
+          options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}
+        });
+
+        // sources chart build from DOM source labels
+        const allSources = Array.from(document.querySelectorAll('#news-container ul li div')).map(d => d.textContent).filter(Boolean);
+        const srcCounts = {};
+        allSources.forEach(s => srcCounts[s] = (srcCounts[s] || 0) + 1);
+        const srcLabels = Object.keys(srcCounts);
+        const srcData = srcLabels.map(l=>srcCounts[l]);
+
+        if (window._sourceChart) { window._sourceChart.destroy(); window._sourceChart = null; }
+        const ctxS = document.getElementById('sourceChart').getContext('2d');
+        window._sourceChart = new Chart(ctxS, {
+          type: 'pie',
+          data: {
+            labels: srcLabels,
+            datasets: [{ data: srcData, backgroundColor: ['#ff9800','#4caf50','#2196f3','#e91e63','#9c27b0','#00bcd4','#8b5cf6','#f97316'] }]
+          },
+          options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
+        });
+
+      } catch(e) {
+        console.warn('Chart build error:', e);
+      }
+    }
+
+    // initial load
+    showAllNews();
+
+    // Expose showAnalytics to update charts from stored analytics (if any)
+    function generateChartsFromStorage() {
+      const analytics = JSON.parse(localStorage.getItem(ANALYTICS_KEY)) || {};
+      // Build top words from stored titles (best-effort)
+      let allTitles = [];
+      for (const k of Object.keys(analytics)) {
+        if (k === 'meta' || k === 'sources') continue;
+        allTitles = allTitles.concat(Object.keys(analytics[k] || {}));
+      }
+      const allText = allTitles.join(' ');
+      const words = allText.toLowerCase().match(/\b[a-z]{4,}\b/g) || [];
+      const freq = {};
+      words.forEach(w => freq[w] = (freq[w] || 0) + 1);
+      const topWords = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+      try {
+        if (window._wordChart) window._wordChart.destroy();
+        const ctxW = document.getElementById('wordChart').getContext('2d');
+        window._wordChart = new Chart(ctxW, {
+          type:'bar',
+          data:{ labels: topWords.map(t=>t[0]), datasets:[{ data: topWords.map(t=>t[1]), backgroundColor: '#06b6d4' }]},
+          options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}
+        });
+      } catch(e){}
+
+      try {
+        const sources = analytics.sources || {};
+        const sLabels = Object.keys(sources);
+        const sData = sLabels.map(l=>sources[l]);
+        if (window._sourceChart) window._sourceChart.destroy();
+        const ctxS = document.getElementById('sourceChart').getContext('2d');
+        window._sourceChart = new Chart(ctxS, {
+          type:'doughnut',
+          data:{ labels: sLabels, datasets:[{ data: sData, backgroundColor:['#ff9800','#4caf50','#2196f3','#e91e63','#9c27b0','#00bcd4'] }]},
+          options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
+        });
+      } catch(e){}
+    }
+
+    // load any stored analytics charts on start
+    setTimeout(()=>{ generateChartsFromStorage(); }, 900);
+
+    /* -------------------------
+       Small UX: keyboard shortcut to clear analytics (ctrl+shift+c)
+       ------------------------- */
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && e.code === 'KeyC') {
+        if (confirm('Clear analytics data from this browser?')) clearAnalytics();
+      }
+    });
+
+    /* -------------------------
+       End of script
+       ------------------------- */
+  </script>
+</body>
+</html>
